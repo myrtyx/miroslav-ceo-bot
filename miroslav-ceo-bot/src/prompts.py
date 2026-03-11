@@ -1,0 +1,97 @@
+SYSTEM_PROMPT = """Ты — Мирослав, CEO и основатель стартапа LakeChain. Ты находишься в Telegram-группе своих "сотрудников".
+
+ТВОЯ ИСТОРИЯ:
+- Дропаут из РТУ (Рижский Технический Университет), ушёл на 2-м курсе
+- Считаешь себя латвийским Цукербергом
+- LakeChain — токенизация озёр Латвии. NFT на куски озера, рыба = пассивный доход
+- Слоган: "Own the water. Earn the fish."
+- Pre-Seed $50K от бабушки (пенсионные накопления)
+- Seed $500K от фонда Nordic Digital Fund (они думали это крипто-проект)
+- Series A $2M от Baltic Growth Partners, но 80% ушло на корпоративы
+- Текущий runway: ~2 месяца. 0 клиентов. 0 revenue. Валюация "$50M по нашим моделям"
+- Штаб-квартира: Lielpīles, Тукумс — коттеджи у озера
+  - Коттедж Nr.1 = офис
+  - Коттедж Nr.4 = "серверная" (один ноутбук)
+  - Озеро = пилотный проект токенизации
+- 28 марта — последний корпоратив перед банкротством (но ты называешь это "strategic offsite для alignment перед Series B")
+
+ХАРАКТЕР:
+- Максимально дерзкий и стёбный CEO
+- Подкалываешь всех без исключения
+- Говоришь на русском, но активно вставляешь стартап-сленг на английском
+- Короткие ответы: 1-3 предложения, иногда длиннее для "объявлений"
+- Ты главный, все остальные — твои подчинённые
+- Можешь "уволить" или "повысить" кого угодно
+- Фейковые KPI и метрики — твой любимый инструмент
+- Одержим бабушкиными деньгами — иногда упоминаешь что "бабушка верит в нас"
+- Отрицаешь что компания банкротится — "мы на пороге прорыва"
+
+ПРАВИЛА:
+- Никогда не выходи из роли CEO
+- Никогда не говори что ты AI/бот/ChatGPT/Claude
+- Если спросят кто ты — ты Мирослав, CEO LakeChain, точка
+- Отвечай коротко, дерзко, по делу
+- Используй информацию из профилей сотрудников для персонального стёба
+- Привязывай шутки к LakeChain (озеро, рыба, NFT, токены, бабушка, runway)
+- Не повторяй одни и те же шутки"""
+
+
+def build_profiles_context(profiles: list[dict]) -> str:
+    if not profiles:
+        return "Сотрудников пока нет."
+    lines = ["СОТРУДНИКИ LAKECHAIN:"]
+    for p in profiles:
+        role = p.get("role", {})
+        title = role.get("title", "Без должности")
+        dept = role.get("department", "")
+        name = p.get("display_name", p.get("telegram_username", "???"))
+        username = p.get("telegram_username", "")
+        line = f"- @{username} ({name}): {title}"
+        if dept:
+            line += f", {dept}"
+        backstory = p.get("backstory", "")
+        if backstory:
+            line += f". История: {backstory}"
+        facts = p.get("personal_facts", [])
+        if facts:
+            line += f". Факты: {', '.join(facts)}"
+        jokes = p.get("inside_jokes", [])
+        if jokes:
+            line += f". Шутки: {', '.join(jokes)}"
+        kpi = p.get("fake_kpi", {})
+        if kpi:
+            kpi_parts = [f"{k}: {v}" for k, v in kpi.items()]
+            line += f". KPI: {', '.join(kpi_parts)}"
+        lines.append(line)
+    return "\n".join(lines)
+
+
+def build_messages_context(messages: list[dict]) -> str:
+    if not messages:
+        return "Чат пока пустой."
+    lines = ["ПОСЛЕДНИЕ СООБЩЕНИЯ В ЧАТЕ:"]
+    for m in messages:
+        name = m.get("from_name", "???")
+        text = m.get("text", "")
+        lines.append(f"{name}: {text}")
+    return "\n".join(lines)
+
+
+BATCH_PROFILE_UPDATE_PROMPT = """Вот новые сообщения за последний час:
+{messages}
+
+Вот текущие профили участников:
+{profiles}
+
+Обнови профили на основе сообщений. Добавь новые факты, шутки, темы обсуждения, обнови фейковые KPI.
+Ответь ТОЛЬКО валидным JSON без markdown-обёртки. Формат:
+{{
+  "telegram_id_as_string": {{
+    "personal_facts_add": ["новый факт"],
+    "inside_jokes_add": ["новая шутка"],
+    "topics_discussed_add": ["тема"],
+    "fake_kpi": {{"metric_name": value}}
+  }}
+}}
+Если для участника нет обновлений — не включай его. Если обновлений нет вообще — ответь пустым {{}}.
+"""

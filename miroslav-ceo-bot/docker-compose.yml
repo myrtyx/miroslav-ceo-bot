@@ -1,0 +1,21 @@
+version: "3.8"
+services:
+  miroslav-bot:
+    build: .
+    container_name: miroslav-ceo
+    restart: unless-stopped
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - ADMIN_TELEGRAM_ID=${ADMIN_TELEGRAM_ID}
+      - TARGET_GROUP_ID=${TARGET_GROUP_ID}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - TZ=Europe/Riga
+    volumes:
+      - ./data:/app/data
+    networks:
+      - bot-network
+
+networks:
+  bot-network:
+    driver: bridge

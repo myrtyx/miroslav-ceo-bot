@@ -1,0 +1,24 @@
+# Environment
+.env
+
+# Runtime data
+miroslav-ceo-bot/data/profiles/
+miroslav-ceo-bot/data/backups/
+miroslav-ceo-bot/data/stats.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
