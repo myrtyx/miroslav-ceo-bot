@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 import anthropic
 
-from .prompts import SYSTEM_PROMPT, build_profiles_context, build_messages_context
+from .prompts import SYSTEM_PROMPT, build_profiles_context, build_messages_context, build_tone_context
 
 logger = logging.getLogger(__name__)
 
@@ -18,11 +18,13 @@ class ClaudeClient:
     def generate_response(self, user_message: str, profiles: list[dict],
                           recent_messages: list[dict],
                           max_length: int = MAX_RESPONSE_CHAT,
-                          memory_context: str = "") -> str | None:
+                          memory_context: str = "",
+                          tone_mode: str = "normal") -> str | None:
         profiles_ctx = build_profiles_context(profiles)
         messages_ctx = build_messages_context(recent_messages)
+        tone_ctx = build_tone_context(tone_mode)
         now = datetime.now(timezone.utc).strftime("Сегодня: %Y-%m-%d (%A)")
-        system = f"{SYSTEM_PROMPT}\n\n{now}\n\n{profiles_ctx}\n\n{messages_ctx}{memory_context}"
+        system = f"{SYSTEM_PROMPT}{tone_ctx}\n\n{now}\n\n{profiles_ctx}\n\n{messages_ctx}{memory_context}"
 
         try:
             response = self._client.messages.create(

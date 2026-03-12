@@ -73,7 +73,8 @@ class MiroslavBot:
         recent = self.buffer.get_recent()
         try:
             reply = self.claude.generate_response(text, all_profiles, recent,
-                                                  memory_context=build_memory_context())
+                                                  memory_context=build_memory_context(),
+                                                  tone_mode=self.config.tone_mode)
             if reply:
                 await update.message.reply_text(reply)
         except Exception:
@@ -163,6 +164,7 @@ class MiroslavBot:
                 recent,
                 max_length=MAX_RESPONSE_CHAT,
                 memory_context=build_memory_context(),
+                tone_mode=self.config.tone_mode,
             )
             self.safety.record_api_call()
             self.safety.record_success()
@@ -222,6 +224,7 @@ class MiroslavBot:
             reply = self.claude.generate_response(
                 prompt, all_profiles, recent, max_length=MAX_RESPONSE_HEARTBEAT,
                 memory_context=build_memory_context(),
+                tone_mode=self.config.tone_mode,
             )
             self.safety.record_api_call()
             self.safety.record_success()

@@ -30,6 +30,7 @@ DEFAULT_CONFIG = {
     "heartbeat_enabled": True,
     "paused": False,
     "rate_limit_per_hour": 50,
+    "tone_mode": "normal",
 }
 
 
@@ -119,6 +120,16 @@ class Config:
     def rate_limit_per_hour(self) -> int:
         return self._data["rate_limit_per_hour"]
 
+    @property
+    def tone_mode(self) -> str:
+        return self._data.get("tone_mode", "normal")
+
+    @tone_mode.setter
+    def tone_mode(self, value: str):
+        if value in ("normal", "bold", "brutal"):
+            self._data["tone_mode"] = value
+            self._save()
+
     def get_settings_text(self) -> str:
         return (
             f"Frequency: {self.response_frequency}\n"
@@ -126,5 +137,6 @@ class Config:
             f"Heartbeat: {'ON' if self.heartbeat_enabled else 'OFF'}\n"
             f"Paused: {'YES' if self.paused else 'NO'}\n"
             f"Rate limit: {self.rate_limit_per_hour}/час\n"
+            f"Tone: {self.tone_mode}\n"
             f"Keywords: {len(self.keywords)} шт."
         )

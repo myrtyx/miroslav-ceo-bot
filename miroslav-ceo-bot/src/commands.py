@@ -43,6 +43,7 @@ class AdminCommands:
             "/broadcast": self._broadcast,
             "/heartbeat": self._heartbeat,
             "/updateprofiles": self._updateprofiles,
+            "/tone": self._tone,
         }
 
         handler = handlers.get(command)
@@ -68,7 +69,8 @@ class AdminCommands:
             "/resume — возобновить работу бота\n"
             "/broadcast текст — отправить сообщение в группу\n"
             "/heartbeat on|off|now — утренние сообщения\n"
-            "/updateprofiles — принудительно обновить профили"
+            "/updateprofiles — принудительно обновить профили\n"
+            "/tone normal|bold|brutal — режим тона"
         )
 
     async def _assign(self, args: str, update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> str:
@@ -196,3 +198,14 @@ class AdminCommands:
 
     async def _updateprofiles(self, args: str, update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> str:
         return "__UPDATE_PROFILES_NOW__"
+
+    async def _tone(self, args: str, update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> str:
+        modes = {"normal": "Обычный", "bold": "Дерзкий", "brutal": "Дерзкий + мат"}
+        if not args:
+            current = modes.get(self._config.tone_mode, "?")
+            return f"Текущий тон: {current}\nФормат: /tone normal | bold | brutal"
+        value = args.strip().lower()
+        if value not in modes:
+            return "Варианты: normal (обычный), bold (дерзкий), brutal (дерзкий + мат)"
+        self._config.tone_mode = value
+        return f"Тон переключён: {modes[value]}"
