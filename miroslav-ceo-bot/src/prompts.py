@@ -107,7 +107,7 @@ def build_messages_context(messages: list[dict]) -> str:
 from pathlib import Path
 
 CHAT_MEMORY_PATH = Path("data/chat_memory.md")
-MAX_MEMORY_SIZE = 10_000
+MAX_MEMORY_SIZE = 6_500
 
 
 def build_memory_context() -> str:

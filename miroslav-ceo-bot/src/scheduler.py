@@ -34,7 +34,7 @@ class BotScheduler:
         self._scheduler.add_job(
             self._batch_profile_update,
             "interval",
-            hours=1,
+            hours=4,
             id="batch_profile_update",
         )
 
