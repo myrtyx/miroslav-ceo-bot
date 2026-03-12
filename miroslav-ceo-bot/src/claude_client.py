@@ -17,11 +17,12 @@ class ClaudeClient:
 
     def generate_response(self, user_message: str, profiles: list[dict],
                           recent_messages: list[dict],
-                          max_length: int = MAX_RESPONSE_CHAT) -> str | None:
+                          max_length: int = MAX_RESPONSE_CHAT,
+                          memory_context: str = "") -> str | None:
         profiles_ctx = build_profiles_context(profiles)
         messages_ctx = build_messages_context(recent_messages)
         now = datetime.now(timezone.utc).strftime("Сегодня: %Y-%m-%d (%A)")
-        system = f"{SYSTEM_PROMPT}\n\n{now}\n\n{profiles_ctx}\n\n{messages_ctx}"
+        system = f"{SYSTEM_PROMPT}\n\n{now}\n\n{profiles_ctx}\n\n{messages_ctx}{memory_context}"
 
         try:
             response = self._client.messages.create(

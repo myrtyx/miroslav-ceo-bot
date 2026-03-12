@@ -10,7 +10,7 @@ from .claude_client import ClaudeClient
 from .config import Config
 from .memory import ProfileManager
 from .message_buffer import MessageBuffer
-from .prompts import BATCH_PROFILE_UPDATE_PROMPT
+from .prompts import BATCH_PROFILE_UPDATE_PROMPT, CHAT_MEMORY_UPDATE_PROMPT, CHAT_MEMORY_PATH, MAX_MEMORY_SIZE
 from .safety import SafetyManager
 
 logger = logging.getLogger(__name__)
@@ -136,9 +136,53 @@ class BotScheduler:
             if updates:
                 self._profiles.apply_batch_update(updates)
                 logger.info("Batch profile update applied: %d profiles", len(updates))
+
+            # Update chat memory
+            self._update_chat_memory(messages_text)
+
             self._buffer.clear_pending()
         except json.JSONDecodeError as e:
             logger.warning("Batch update returned invalid JSON: %s", e)
         except Exception as e:
             logger.warning("Batch profile update failed: %s", e)
             self._safety.record_error()
+
+    def _update_chat_memory(self, messages_text: str):
+        current_memory = ""
+        if CHAT_MEMORY_PATH.exists():
+            try:
+                current_memory = CHAT_MEMORY_PATH.read_text(encoding="utf-8").strip()
+            except Exception:
+                pass
+
+        prompt = CHAT_MEMORY_UPDATE_PROMPT.format(
+            messages=messages_text,
+            current_memory=current_memory or "(пока пусто)",
+        )
+
+        try:
+            response = self._claude.generate_raw(
+                "Ты — система обновления памяти чата. Сожми ключевые моменты в bullet points.",
+                prompt,
+                max_tokens=500,
+            )
+            self._safety.record_api_call()
+
+            if not response or not response.strip():
+                return
+
+            new_entry = f"\n\n## {datetime.now().strftime('%Y-%m-%d %H:%M')}\n{response.strip()}"
+            updated = current_memory + new_entry
+
+            # Trim if over size limit
+            if len(updated) > MAX_MEMORY_SIZE:
+                sections = updated.split("\n\n## ")
+                while len("\n\n## ".join(sections)) > MAX_MEMORY_SIZE and len(sections) > 1:
+                    sections.pop(1)  # keep header (index 0), remove oldest
+                updated = "\n\n## ".join(sections)
+
+            CHAT_MEMORY_PATH.parent.mkdir(parents=True, exist_ok=True)
+            CHAT_MEMORY_PATH.write_text(updated, encoding="utf-8")
+            logger.info("Chat memory updated")
+        except Exception as e:
+            logger.warning("Chat memory update failed: %s", e)

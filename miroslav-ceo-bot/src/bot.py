@@ -10,6 +10,7 @@ from .memory import ProfileManager
 from .message_buffer import MessageBuffer
 from .router import Router
 from .safety import SafetyManager
+from .prompts import build_memory_context
 from .stickers import sticker_to_text
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,7 @@ class MiroslavBot:
         self.router = router
         self.safety = safety
         self.commands = commands
+        self._trigger_profile_update = None  # set by main.py
 
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         message = update.message
@@ -55,6 +57,13 @@ class MiroslavBot:
                 await self._send_heartbeat(context)
                 await update.message.reply_text("Heartbeat отправлен")
                 return
+            if response == "__UPDATE_PROFILES_NOW__":
+                if self._trigger_profile_update:
+                    await self._trigger_profile_update()
+                    await update.message.reply_text("Профили обновлены!")
+                else:
+                    await update.message.reply_text("Scheduler не подключён")
+                return
             if response:
                 await update.message.reply_text(response)
             return
@@ -63,7 +72,8 @@ class MiroslavBot:
         all_profiles = self.profiles.get_all()
         recent = self.buffer.get_recent()
         try:
-            reply = self.claude.generate_response(text, all_profiles, recent)
+            reply = self.claude.generate_response(text, all_profiles, recent,
+                                                  memory_context=build_memory_context())
             if reply:
                 await update.message.reply_text(reply)
         except Exception:
@@ -152,6 +162,7 @@ class MiroslavBot:
                 all_profiles,
                 recent,
                 max_length=MAX_RESPONSE_CHAT,
+                memory_context=build_memory_context(),
             )
             self.safety.record_api_call()
             self.safety.record_success()
@@ -209,7 +220,8 @@ class MiroslavBot:
 
         try:
             reply = self.claude.generate_response(
-                prompt, all_profiles, recent, max_length=MAX_RESPONSE_HEARTBEAT
+                prompt, all_profiles, recent, max_length=MAX_RESPONSE_HEARTBEAT,
+                memory_context=build_memory_context(),
             )
             self.safety.record_api_call()
             self.safety.record_success()

@@ -48,6 +48,8 @@ def main():
     scheduler = BotScheduler(config, claude, profiles, buffer, safety,
                               send_heartbeat_via_app)
 
+    bot._trigger_profile_update = scheduler._batch_profile_update
+
     # Register handler for all messages
     app.add_handler(MessageHandler(
         filters.ALL & ~filters.COMMAND & ~filters.UpdateType.EDITED_MESSAGE,

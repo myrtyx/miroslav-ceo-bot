@@ -77,6 +77,41 @@ def build_messages_context(messages: list[dict]) -> str:
     return "\n".join(lines)
 
 
+from pathlib import Path
+
+CHAT_MEMORY_PATH = Path("data/chat_memory.md")
+MAX_MEMORY_SIZE = 10_000
+
+
+def build_memory_context() -> str:
+    if not CHAT_MEMORY_PATH.exists():
+        return ""
+    try:
+        text = CHAT_MEMORY_PATH.read_text(encoding="utf-8").strip()
+        if not text:
+            return ""
+        return f"\n\nПАМЯТЬ О ПРОШЛЫХ РАЗГОВОРАХ:\n{text}"
+    except Exception:
+        return ""
+
+
+CHAT_MEMORY_UPDATE_PROMPT = """Вот сообщения за последний час:
+{messages}
+
+Вот текущая память бота:
+{current_memory}
+
+Сожми ключевые моменты этого часа в 2-5 bullet points. Сохрани самое важное:
+- Ключевые темы и обсуждения
+- Важные события и решения
+- Интересные моменты и шутки
+- Конфликты или драма
+
+Ответь ТОЛЬКО новыми bullet points (каждый начинается с "- "). Не повторяй то, что уже есть в памяти.
+Если ничего важного не произошло — ответь пустой строкой.
+"""
+
+
 BATCH_PROFILE_UPDATE_PROMPT = """Вот новые сообщения за последний час:
 {messages}
 

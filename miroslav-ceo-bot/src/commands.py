@@ -27,6 +27,7 @@ class AdminCommands:
         args = parts[1] if len(parts) > 1 else ""
 
         handlers = {
+            "/help": self._help,
             "/assign": self._assign,
             "/backstory": self._backstory,
             "/profile": self._profile,
@@ -41,12 +42,34 @@ class AdminCommands:
             "/resume": self._resume,
             "/broadcast": self._broadcast,
             "/heartbeat": self._heartbeat,
+            "/updateprofiles": self._updateprofiles,
         }
 
         handler = handlers.get(command)
         if handler:
             return await handler(args, update, context)
         return None
+
+    async def _help(self, args: str, update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> str:
+        return (
+            "Команды Мирослава:\n\n"
+            "/help — этот список команд\n"
+            "/health — статус бота (uptime, ошибки, rate)\n"
+            "/settings — текущие настройки\n"
+            "/status — статистика бота\n"
+            "/assign @user Роль, Отдел — назначить роль\n"
+            "/backstory @user текст — добавить предысторию\n"
+            "/profile @user — посмотреть профиль\n"
+            "/team — список всех сотрудников\n"
+            "/frequency 0.3 — частота случайных ответов (0-1)\n"
+            "/cooldown 5 — минимум минут между ответами\n"
+            "/keywords — управление ключевыми словами\n"
+            "/pause — поставить бота на паузу\n"
+            "/resume — возобновить работу бота\n"
+            "/broadcast текст — отправить сообщение в группу\n"
+            "/heartbeat on|off|now — утренние сообщения\n"
+            "/updateprofiles — принудительно обновить профили"
+        )
 
     async def _assign(self, args: str, update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> str:
         if not args:
@@ -170,3 +193,6 @@ class AdminCommands:
         elif action == "now":
             return "__HEARTBEAT_NOW__"
         return "Формат: /heartbeat on | off | now"
+
+    async def _updateprofiles(self, args: str, update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> str:
+        return "__UPDATE_PROFILES_NOW__"
