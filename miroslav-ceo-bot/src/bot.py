@@ -202,9 +202,10 @@ class MiroslavBot:
             target = next((p for p in all_p
                            if p.get("telegram_username", "").lower() == target_username.lower()), None)
             if not target:
+                target = self.profiles.get_or_create_intern(0, target_username, target_username)
                 await context.bot.send_message(
-                    chat_id=self.config.admin_id, text=f"Профиль @{target_username} не найден")
-                return
+                    chat_id=self.config.admin_id,
+                    text=f"Создан профиль-заглушка для @{target_username}")
         else:
             target = self.profiles.get_least_known()
         if not target:
