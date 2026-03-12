@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, timezone
 
 import anthropic
 
@@ -19,7 +20,8 @@ class ClaudeClient:
                           max_length: int = MAX_RESPONSE_CHAT) -> str | None:
         profiles_ctx = build_profiles_context(profiles)
         messages_ctx = build_messages_context(recent_messages)
-        system = f"{SYSTEM_PROMPT}\n\n{profiles_ctx}\n\n{messages_ctx}"
+        now = datetime.now(timezone.utc).strftime("Сегодня: %Y-%m-%d (%A)")
+        system = f"{SYSTEM_PROMPT}\n\n{now}\n\n{profiles_ctx}\n\n{messages_ctx}"
 
         try:
             response = self._client.messages.create(
