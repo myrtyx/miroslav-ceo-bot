@@ -10,7 +10,9 @@ from .claude_client import ClaudeClient
 from .config import Config
 from .memory import ProfileManager
 from .message_buffer import MessageBuffer
-from .prompts import BATCH_PROFILE_UPDATE_PROMPT, CHAT_MEMORY_UPDATE_PROMPT, CHAT_MEMORY_PATH, MAX_MEMORY_SIZE
+from .prompts import (BATCH_PROFILE_UPDATE_PROMPT, CHAT_MEMORY_UPDATE_PROMPT,
+                       LORE_UPDATE_PROMPT, CHAT_MEMORY_PATH, MIROSLAV_LORE_PATH,
+                       MAX_MEMORY_SIZE, MAX_LORE_SIZE)
 from .safety import SafetyManager
 
 logger = logging.getLogger(__name__)
@@ -131,8 +133,9 @@ class BotScheduler:
                 self._profiles.apply_batch_update(updates)
                 logger.info("Batch profile update applied: %d profiles", len(updates))
 
-            # Update chat memory
+            # Update chat memory and self-lore
             self._update_chat_memory(messages_text)
+            self._update_miroslav_lore(messages_text)
 
             self._buffer.clear_pending()
         except json.JSONDecodeError as e:
@@ -180,3 +183,50 @@ class BotScheduler:
             logger.info("Chat memory updated")
         except Exception as e:
             logger.warning("Chat memory update failed: %s", e)
+
+    def _update_miroslav_lore(self, messages_text: str):
+        # Only process if there are bot responses in messages
+        if "Мирослав:" not in messages_text:
+            return
+
+        current_lore = ""
+        if MIROSLAV_LORE_PATH.exists():
+            try:
+                current_lore = MIROSLAV_LORE_PATH.read_text(encoding="utf-8").strip()
+            except Exception:
+                pass
+
+        prompt = LORE_UPDATE_PROMPT.format(
+            messages=messages_text,
+            current_lore=current_lore or "(пока пусто)",
+        )
+
+        try:
+            response = self._claude.generate_raw(
+                "Ты — система извлечения лора. Извлеки новые факты которые Мирослав придумал о себе.",
+                prompt,
+                max_tokens=300,
+            )
+            self._safety.record_api_call()
+
+            if not response or not response.strip():
+                return
+
+            new_facts = response.strip()
+            if not new_facts.startswith("- "):
+                return
+
+            updated = (current_lore + "\n" + new_facts).strip() if current_lore else new_facts
+
+            # Trim if over size limit
+            if len(updated) > MAX_LORE_SIZE:
+                lines = updated.split("\n")
+                while len("\n".join(lines)) > MAX_LORE_SIZE and len(lines) > 1:
+                    lines.pop(0)  # remove oldest facts
+                updated = "\n".join(lines)
+
+            MIROSLAV_LORE_PATH.parent.mkdir(parents=True, exist_ok=True)
+            MIROSLAV_LORE_PATH.write_text(updated, encoding="utf-8")
+            logger.info("Miroslav lore updated")
+        except Exception as e:
+            logger.warning("Miroslav lore update failed: %s", e)

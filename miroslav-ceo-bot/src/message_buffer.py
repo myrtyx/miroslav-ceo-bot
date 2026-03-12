@@ -76,6 +76,18 @@ class MessageBuffer:
     def get_pending(self) -> list[dict]:
         return list(self._pending)
 
+    def add_bot_response(self, text: str):
+        entry = {
+            "from_id": 0,
+            "from_name": "Мирослав",
+            "from_username": "bot",
+            "text": text,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "type": "bot_response",
+        }
+        self._pending.append(entry)
+        self._save_pending()
+
     def clear_pending(self):
         self._pending.clear()
         self._save_pending()

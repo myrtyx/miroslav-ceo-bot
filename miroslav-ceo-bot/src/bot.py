@@ -189,6 +189,7 @@ class MiroslavBot:
 
         if reply:
             await message.reply_text(reply)
+            self.buffer.add_bot_response(reply)
             self.router.record_response()
 
     async def _send_probe(self, context: ContextTypes.DEFAULT_TYPE, target_username: str | None = None):
@@ -242,6 +243,7 @@ class MiroslavBot:
             if reply:
                 await context.bot.send_message(
                     chat_id=self.config.target_group_id, text=reply)
+                self.buffer.add_bot_response(reply)
                 await context.bot.send_message(
                     chat_id=self.config.admin_id,
                     text=f"Probe отправлен для @{username} ({name})")
@@ -294,6 +296,7 @@ class MiroslavBot:
                 await bot.send_message(
                     chat_id=self.config.target_group_id, text=reply
                 )
+                self.buffer.add_bot_response(reply)
                 logger.info("Heartbeat sent: %s", chosen)
         except Exception as e:
             logger.warning("Heartbeat failed: %s", e)
