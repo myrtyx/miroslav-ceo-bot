@@ -64,8 +64,8 @@ class BotScheduler:
         if hour < 12 or hour >= 22:
             return
 
-        # ~2 heartbeats per day across 10 hours (20 checks), ~10% per check
-        if random.random() > 0.10:
+        # ~1 heartbeat per day across 10 hours (20 checks), ~5% per check
+        if random.random() > 0.05:
             return
 
         if not self._safety.can_call_api(self._config.rate_limit_per_hour):
