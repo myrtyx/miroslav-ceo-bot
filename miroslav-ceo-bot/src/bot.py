@@ -64,8 +64,9 @@ class MiroslavBot:
                 else:
                     await update.message.reply_text("Scheduler не подключён")
                 return
-            if response == "__PROBE_NOW__":
-                await self._send_probe(context)
+            if response and response.startswith("__PROBE_NOW__"):
+                target_username = response[len("__PROBE_NOW__"):]
+                await self._send_probe(context, target_username or None)
                 return
             if response:
                 await update.message.reply_text(response)
@@ -190,13 +191,22 @@ class MiroslavBot:
             await message.reply_text(reply)
             self.router.record_response()
 
-    async def _send_probe(self, context: ContextTypes.DEFAULT_TYPE):
+    async def _send_probe(self, context: ContextTypes.DEFAULT_TYPE, target_username: str | None = None):
         if self.config.target_group_id == 0:
             await context.bot.send_message(
                 chat_id=self.config.admin_id, text="TARGET_GROUP_ID не задан")
             return
 
-        target = self.profiles.get_least_known()
+        if target_username:
+            all_p = self.profiles.get_all()
+            target = next((p for p in all_p
+                           if p.get("telegram_username", "").lower() == target_username.lower()), None)
+            if not target:
+                await context.bot.send_message(
+                    chat_id=self.config.admin_id, text=f"Профиль @{target_username} не найден")
+                return
+        else:
+            target = self.profiles.get_least_known()
         if not target:
             await context.bot.send_message(
                 chat_id=self.config.admin_id, text="Нет профилей для probe")

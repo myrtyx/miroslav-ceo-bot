@@ -202,7 +202,8 @@ class AdminCommands:
         return "__UPDATE_PROFILES_NOW__"
 
     async def _probe(self, args: str, update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> str:
-        return "__PROBE_NOW__"
+        target = args.strip().lstrip("@") if args else ""
+        return f"__PROBE_NOW__{target}"
 
     async def _tone(self, args: str, update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> str:
         modes = {"normal": "Обычный", "bold": "Дерзкий", "brutal": "Дерзкий + мат"}
