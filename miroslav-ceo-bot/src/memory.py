@@ -12,7 +12,9 @@ class ProfileManager:
     def __init__(self):
         PROFILES_DIR.mkdir(parents=True, exist_ok=True)
 
-    def _path(self, telegram_id: int) -> Path:
+    def _path(self, telegram_id: int, username: str = "") -> Path:
+        if telegram_id == 0 and username:
+            return PROFILES_DIR / f"u_{username.lower()}.json"
         return PROFILES_DIR / f"{telegram_id}.json"
 
     def get(self, telegram_id: int) -> dict | None:
@@ -28,12 +30,13 @@ class ProfileManager:
 
     def save(self, profile: dict):
         tid = profile["telegram_id"]
-        path = self._path(tid)
+        username = profile.get("telegram_username", "")
+        path = self._path(tid, username)
         with open(path, "w", encoding="utf-8") as f:
             json.dump(profile, f, ensure_ascii=False, indent=2)
 
     def get_or_create_intern(self, telegram_id: int, username: str, display_name: str) -> dict:
-        profile = self.get(telegram_id)
+        profile = self.get(telegram_id) if telegram_id != 0 else self._find_by_username(username)
         if profile:
             profile["last_seen"] = datetime.now(timezone.utc).isoformat()
             profile["interaction_count"] = profile.get("interaction_count", 0) + 1
@@ -93,7 +96,7 @@ class ProfileManager:
     def update_telegram_id(self, username: str, telegram_id: int, display_name: str):
         profile = self._find_by_username(username)
         if profile and profile["telegram_id"] == 0:
-            old_path = self._path(0)
+            old_path = self._path(0, username)
             profile["telegram_id"] = telegram_id
             profile["display_name"] = display_name
             self.save(profile)
