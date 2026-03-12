@@ -60,18 +60,12 @@ class BotScheduler:
         now = datetime.now()
         hour = now.hour
 
-        # Only 09:00-12:00 and 17:00-21:00, not at night
-        if hour < 9 or hour >= 21:
+        # Only 12:00-22:00 Riga time
+        if hour < 12 or hour >= 22:
             return
 
-        is_morning = 9 <= hour < 12
-        is_evening = 17 <= hour < 21
-
-        if not (is_morning or is_evening):
-            return
-
-        # ~70% chance per window, checked every 30 min → ~35% per check
-        if random.random() > 0.35:
+        # ~2 heartbeats per day across 10 hours (20 checks), ~10% per check
+        if random.random() > 0.10:
             return
 
         if not self._safety.can_call_api(self._config.rate_limit_per_hour):
