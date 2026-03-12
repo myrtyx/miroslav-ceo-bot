@@ -130,6 +130,17 @@ class ProfileManager:
                 profile["fake_kpi"] = changes["fake_kpi"]
             self.save(profile)
 
+    def get_least_known(self) -> dict | None:
+        profiles = self.get_all()
+        if not profiles:
+            return None
+        def info_score(p):
+            return (len(p.get("personal_facts", []))
+                    + len(p.get("inside_jokes", []))
+                    + len(p.get("topics_discussed", []))
+                    + (1 if p.get("backstory") else 0))
+        return min(profiles, key=info_score)
+
     def _find_by_username(self, username: str) -> dict | None:
         username = username.lstrip("@").lower()
         for profile in self.get_all():

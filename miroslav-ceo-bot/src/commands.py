@@ -44,6 +44,7 @@ class AdminCommands:
             "/heartbeat": self._heartbeat,
             "/updateprofiles": self._updateprofiles,
             "/tone": self._tone,
+            "/probe": self._probe,
         }
 
         handler = handlers.get(command)
@@ -70,7 +71,8 @@ class AdminCommands:
             "/broadcast текст — отправить сообщение в группу\n"
             "/heartbeat on|off|now — утренние сообщения\n"
             "/updateprofiles — принудительно обновить профили\n"
-            "/tone normal|bold|brutal — режим тона"
+            "/tone normal|bold|brutal — режим тона\n"
+            "/probe — допросить наименее известного сотрудника"
         )
 
     async def _assign(self, args: str, update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> str:
@@ -198,6 +200,9 @@ class AdminCommands:
 
     async def _updateprofiles(self, args: str, update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> str:
         return "__UPDATE_PROFILES_NOW__"
+
+    async def _probe(self, args: str, update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> str:
+        return "__PROBE_NOW__"
 
     async def _tone(self, args: str, update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> str:
         modes = {"normal": "Обычный", "bold": "Дерзкий", "brutal": "Дерзкий + мат"}

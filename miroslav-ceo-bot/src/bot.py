@@ -64,6 +64,9 @@ class MiroslavBot:
                 else:
                     await update.message.reply_text("Scheduler не подключён")
                 return
+            if response == "__PROBE_NOW__":
+                await self._send_probe(context)
+                return
             if response:
                 await update.message.reply_text(response)
             return
@@ -186,6 +189,51 @@ class MiroslavBot:
         if reply:
             await message.reply_text(reply)
             self.router.record_response()
+
+    async def _send_probe(self, context: ContextTypes.DEFAULT_TYPE):
+        if self.config.target_group_id == 0:
+            await context.bot.send_message(
+                chat_id=self.config.admin_id, text="TARGET_GROUP_ID не задан")
+            return
+
+        target = self.profiles.get_least_known()
+        if not target:
+            await context.bot.send_message(
+                chat_id=self.config.admin_id, text="Нет профилей для probe")
+            return
+
+        name = target.get("display_name", "???")
+        username = target.get("telegram_username", "")
+        facts = target.get("personal_facts", [])
+        facts_text = ", ".join(facts) if facts else "почти ничего"
+
+        prompt = (
+            f"Тебе нужно обратиться к @{username} ({name}) в групповом чате. "
+            f"Ты знаешь о нём: {facts_text}. "
+            f"Задай ему 1-2 вопроса чтобы узнать его лучше — "
+            f"что он делает, чем увлекается, какие у него скиллы. "
+            f"Обращайся по имени или юзернейму. Пиши как CEO в чате — коротко, дерзко, с подколом."
+        )
+
+        all_profiles = self.profiles.get_all()
+        recent = self.buffer.get_recent(5)
+        try:
+            reply = self.claude.generate_response(
+                prompt, all_profiles, recent,
+                memory_context=build_memory_context(),
+                tone_mode=self.config.tone_mode,
+            )
+            self.safety.record_api_call()
+            self.safety.record_success()
+            if reply:
+                await context.bot.send_message(
+                    chat_id=self.config.target_group_id, text=reply)
+                await context.bot.send_message(
+                    chat_id=self.config.admin_id,
+                    text=f"Probe отправлен для @{username} ({name})")
+        except Exception as e:
+            await context.bot.send_message(
+                chat_id=self.config.admin_id, text=f"Probe ошибка: {e}")
 
     async def _send_heartbeat(self, context: ContextTypes.DEFAULT_TYPE):
         await self._do_heartbeat(context.bot)
